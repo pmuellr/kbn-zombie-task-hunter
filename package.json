@@ -1,0 +1,25 @@
+{
+  "name": "kbn-zombie-task-hunter",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Kibana zombie task hunter",
+  "license": "MIT",
+  "author": "Patrick Mueller <pmuellr@apache.org> (https://github.com/pmuellr)",
+  "homepage": "https://github.com/pmuellr/kbn-zombie-task-hunter",
+  "bin": {
+    "kbn-zombie-task-hunter": "kbn-zombie-task-hunter.mjs"
+  },
+  "scripts": {
+    "start": "node ./kbn-zombie-task-hunter.mjs",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pmuellr/kbn-zombie-task-hunter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pmuellr/kbn-zombie-task-hunter/issues"
+  },
+  "dependencies": {
+  }
+}
