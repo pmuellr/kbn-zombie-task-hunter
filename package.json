@@ -1,6 +1,6 @@
 {
   "name": "kbn-zombie-task-hunter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Kibana zombie task hunter",
   "license": "MIT",

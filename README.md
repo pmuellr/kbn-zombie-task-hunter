@@ -51,6 +51,10 @@ creating zombie alerting tasks to test with
 change log
 ================================================================================
 
+#### 1.0.1 - fix broken task ids
+
+- task id's generated for the Dev Tools bulk delete were incorrect
+
 #### 1.0.0 - initial release
 
 - seems to work with a basic manual test

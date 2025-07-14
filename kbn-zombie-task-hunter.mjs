@@ -60,7 +60,7 @@ async function start(esUrl) {
   
   console.log(`POST /${indexName}/_bulk`)
   for (const taskId of disableTasks) {
-    console.log(`{ "delete" : { "_id" : "task:${taskId}" } }`)
+    console.log(`{ "delete" : { "_id" : "${taskId}" } }`)
   }
 
 }
@@ -71,6 +71,7 @@ async function getTasks(esUrl) {
   const result = new Map()
 
   const res = await search(esUrl, '.kibana*/_search', {
+    // to allow more, we'll have to use a PIT-based search
     size: 10000,
     _source: [
       'task.taskType',
@@ -87,7 +88,7 @@ async function getTasks(esUrl) {
     }
   })
   
-  for (const hit of res.hits.hits) {
+  for (const hit of res?.hits?.hits || []) {
     // console.log(JSON.stringify(hit))
     const id = hit._id
     const index = hit._index
@@ -109,6 +110,7 @@ async function getRules(esUrl) {
   const result = new Map()
 
   const res = await search(esUrl, '.kibana*/_search', {
+    // to allow more, we'll have to use a PIT-based search
     size: 10000,
     _source: [
       'alert.enabled',
@@ -123,7 +125,7 @@ async function getRules(esUrl) {
     }
   })
 
-  for (const hit of res.hits.hits) {
+  for (const hit of res?.hits?.hits || []) {
     const id = hit._id
     const enabled = hit._source?.alert?.enabled || false
 
@@ -146,7 +148,10 @@ async function search(esUrl, urlPath, query) {
 
   const headers = new Headers()
   headers.append("Content-Type", "application/json")
-  headers.append("Authorization", authHeader)  
+
+  if (authHeader) {
+    headers.append("Authorization", authHeader)  
+  }
 
   const finalUrl = path.join(url, urlPath)
   const req = new Request(finalUrl, {
