@@ -17,6 +17,7 @@ or run via
 Or just copy the script `kbn-zombie-task-hunter.mjs` somewhere, as it
 requires no dependencies.
     
+
 usage
 ================================================================================
 
@@ -27,13 +28,32 @@ usage
 - `http(s)://<userid>:<password>@<hostname>:<port>`
 - `http(s)://APIKEY:<apikey>@<hostname>:<port>`
 
+The script will generate some diagnostic information, and include some
+Dev Tools commands that can be used to resolve some issues.
+
+These changes may include changing the `.kibana_task_manager` index,
+which requires the `kibana_system` role for elastic stack versions > 9.
+You should create a user with this role just to run these Dev Tools
+commands, and then delete the user when finished resolving issues.
+
+
+creating zombie alerting tasks to test with
+================================================================================
+
+1. create a rule
+2. export it via the Saved Objects page
+3. import it via the Saved Objects page, using options "Check for existing
+   objects" / "Automatically overwrite conflicts"
+4. the overwritten rules are disabled and have no task id assigned, however
+   the task objects are still being run.
+
 
 change log
 ================================================================================
 
-#### 0.0.1 - under development
+#### 1.0.0 - initial release
 
-- under development, not yet working
+- seems to work with a basic manual test
 
 
 license
@@ -41,6 +61,7 @@ license
 
 This package is licensed under the MIT license.  See the [LICENSE.md][] file
 for more information.
+
 
 contributing
 ================================================================================

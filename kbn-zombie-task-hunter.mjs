@@ -24,7 +24,11 @@ async function start(esUrl) {
   /** @type { string[] } */
   const disableTasks = []
 
-  for (const [taskId, { ruleId }] of taskInfo) {
+  /** @type { string | undefined } */
+  let taskIndex = undefined
+  for (const [taskId, { index, ruleId, enabled }] of taskInfo) {
+    if (!taskIndex) taskIndex = index
+
     const rule = ruleInfo.get(ruleId)
     if (!rule) {
       // console.log(`rule not found for task ${taskId}: ruleId: ${ruleId}`)
@@ -33,7 +37,7 @@ async function start(esUrl) {
 
     if (rule.taskId !== taskId) {
       if (rule.enabled) {
-        console.log(`task ${taskId}'s enabled rule points to a different task: ruleId: ${ruleId}, rule's taskId: ${rule.taskId}`)
+        console.log(`task ${taskId}'s enabled  rule points to a different task: ruleId: ${ruleId}, rule's taskId: ${rule.taskId}`)
       } else {
         console.log(`task ${taskId}'s disabled rule points to a different task: ruleId: ${ruleId}, rule's taskId: ${rule.taskId}`)
       }
@@ -47,19 +51,23 @@ async function start(esUrl) {
     return
   }
 
-  console.log(`found ${disableTasks.length} to delete`)
   console.log('')
+  console.log(`Found ${disableTasks.length} task documents to delete via Dev Tools.`)
+  console.log(`For elastic stack >= 9, use a user with the "kibana_system" role.`)
+  console.log('')
+
+  const indexName = taskIndex || '.kibana_task_manager_x.y.z_aaa'
   
-  console.log('POST .kibana_task_manager_x.y.z_aaa/_bulk')
+  console.log(`POST /${indexName}/_bulk`)
   for (const taskId of disableTasks) {
     console.log(`{ "delete" : { "_id" : "task:${taskId}" } }`)
   }
 
 }
 
-/** @type { (esUrl: string) => Promise<Map<string, { ruleId: string, enabled: boolean }>> } */
+/** @type { (esUrl: string) => Promise<Map<string, { index: string, ruleId: string, enabled: boolean }>> } */
 async function getTasks(esUrl) {
-  /** @type { Map<string, { ruleId: string, enabled: boolean }> } */
+  /** @type { Map<string, { index: string, ruleId: string, enabled: boolean }> } */
   const result = new Map()
 
   const res = await search(esUrl, '.kibana*/_search', {
@@ -80,22 +88,24 @@ async function getTasks(esUrl) {
   })
   
   for (const hit of res.hits.hits) {
+    // console.log(JSON.stringify(hit))
     const id = hit._id
-    const enabled = hit._source.task.enabled
-    const paramsEncoded = hit._source.task.params
+    const index = hit._index
+    const enabled = hit._source?.task?.enabled || false
+    const paramsEncoded = hit._source?.task?.params || '{"alertId": undefined}'
     const params = JSON.parse(paramsEncoded)
-    const ruleId = `alert: ${params.alertId}`
+    const ruleId = `alert:${params.alertId}`
 
-    result.set(id, { ruleId, enabled })
+    result.set(id, { index, ruleId, enabled })
   }
 
-  console.log(JSON.stringify(Array.from(result.entries()), null, 4))
+  // console.log(JSON.stringify(Array.from(result.entries()), null, 4))
   return result
 }
 
-/** @type { (esUrl: string) => Promise<Map<string, { taskId: string, enabled: boolean }>> } */
+/** @type { (esUrl: string) => Promise<Map<string, { taskId?: string, enabled: boolean }>> } */
 async function getRules(esUrl) {
-  /** @type { Map<string, { taskId: string, enabled: boolean }> } */
+  /** @type { Map<string, { taskId?: string, enabled: boolean }> } */
   const result = new Map()
 
   const res = await search(esUrl, '.kibana*/_search', {
@@ -115,13 +125,18 @@ async function getRules(esUrl) {
 
   for (const hit of res.hits.hits) {
     const id = hit._id
-    const enabled = hit._source.alert.enabled
-    const taskId = `task:${hit._source.alert.scheduledTaskId}`
+    const enabled = hit._source?.alert?.enabled || false
 
-    result.set(id, { taskId, enabled })
+    if (hit._source?.alert?.scheduledTaskId) {
+      const taskId = `task:${hit._source.alert.scheduledTaskId}`
+      result.set(id, { taskId, enabled })
+    } else {
+      result.set(id, { enabled })
+    }
+
   }
 
-  console.log(JSON.stringify(Array.from(result.entries()), null, 4))
+  // console.log(JSON.stringify(Array.from(result.entries()), null, 4))
   return result
 }
 
