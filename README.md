@@ -51,11 +51,15 @@ creating zombie alerting tasks to test with
 change log
 ================================================================================
 
-#### 1.0.1 - fix broken task ids
+#### 2025-07-15 - 1.0.2 - specify precise index names
+
+- fixed to use narrower index patterns for searches
+
+#### 2025-07-14 - 1.0.1 - fix broken task ids
 
 - task id's generated for the Dev Tools bulk delete were incorrect
 
-#### 1.0.0 - initial release
+#### 2025-07-13 - 1.0.0 - initial release
 
 - seems to work with a basic manual test
 

@@ -21,13 +21,10 @@ async function start(esUrl) {
   const taskInfo = await getTasks(esUrl)
   const ruleInfo = await getRules(esUrl)
 
-  /** @type { string[] } */
+  /** @type { {taskId : string, taskIndex: string }[] } */
   const disableTasks = []
 
-  /** @type { string | undefined } */
-  let taskIndex = undefined
   for (const [taskId, { index, ruleId, enabled }] of taskInfo) {
-    if (!taskIndex) taskIndex = index
 
     const rule = ruleInfo.get(ruleId)
     if (!rule) {
@@ -42,7 +39,7 @@ async function start(esUrl) {
         console.log(`task ${taskId}'s disabled rule points to a different task: ruleId: ${ruleId}, rule's taskId: ${rule.taskId}`)
       }
 
-      disableTasks.push(taskId)
+      disableTasks.push({ taskId, taskIndex: index })
     }
   }
 
@@ -56,13 +53,10 @@ async function start(esUrl) {
   console.log(`For elastic stack >= 9, use a user with the "kibana_system" role.`)
   console.log('')
 
-  const indexName = taskIndex || '.kibana_task_manager_x.y.z_aaa'
-  
-  console.log(`POST /${indexName}/_bulk`)
-  for (const taskId of disableTasks) {
-    console.log(`{ "delete" : { "_id" : "${taskId}" } }`)
+  console.log(`POST /_bulk`)
+  for (const { taskId, taskIndex } of disableTasks) {
+    console.log(`{ "delete" : { "_id" : "${taskId}", "_index": "${taskIndex}" } }`)
   }
-
 }
 
 /** @type { (esUrl: string) => Promise<Map<string, { index: string, ruleId: string, enabled: boolean }>> } */
@@ -70,7 +64,7 @@ async function getTasks(esUrl) {
   /** @type { Map<string, { index: string, ruleId: string, enabled: boolean }> } */
   const result = new Map()
 
-  const res = await search(esUrl, '.kibana*/_search', {
+  const res = await search(esUrl, '.kibana,.kibana_task_manager/_search', {
     // to allow more, we'll have to use a PIT-based search
     size: 10000,
     _source: [
@@ -109,7 +103,7 @@ async function getRules(esUrl) {
   /** @type { Map<string, { taskId?: string, enabled: boolean }> } */
   const result = new Map()
 
-  const res = await search(esUrl, '.kibana*/_search', {
+  const res = await search(esUrl, '.kibana,.kibana_alerting_cases/_search', {
     // to allow more, we'll have to use a PIT-based search
     size: 10000,
     _source: [
